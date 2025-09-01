@@ -1,0 +1,49 @@
+{
+  "metadata": [
+    {
+      "src": [
+        {
+          "files": [
+            "src/UntitledRpgLogic.LibraryFile/UntitledRpgLogic.LibraryFile.csproj",
+          ],
+          "src": ".."
+        }
+      ],
+      "dest": "api",
+      "disableGitFeatures": false,
+      "disableDefaultFilter": false,
+      "memberLayout": "separatePages",
+      "includeExplicitInterfaceImplementations": true,
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "files": [
+          "**/*.{md,yml}"
+        ],
+        "exclude": [
+          "_site/**"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [
+          "images/**"
+        ]
+      }
+    ],
+    "output": "_site",
+    "template": [
+      "default",
+      "templates/singulinkfx"
+    ],
+    "globalMetadata": {
+      "_appName": "UntitledRpgLogic Docs",
+      "_appTitle": "UntitledRpgLogic Docs",
+      "_enableSearch": true,
+      "pdf": false
+    }
+  }
+}

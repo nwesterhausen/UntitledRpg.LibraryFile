@@ -1,0 +1,29 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "packageRules": [
+    {
+      "groupName": "all dependencies",
+      "groupSlug": "all-deps",
+      "automerge": true,
+      "matchPackageNames": [
+        "*"
+      ]
+    },
+    {
+      "matchPackageNames": [
+        "dotnet-sdk"
+      ],
+      "allowedVersions": "<9"
+    },
+    {
+      "matchPackageNames": [
+        "GodotSharp{/,}**",
+        "Godot.NET.Sdk{/,}**"
+      ]
+    }
+  ]
+}

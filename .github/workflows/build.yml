@@ -1,0 +1,89 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "next" ]
+  workflow_dispatch:
+  pull_request:
+    branches: [ "main", "next" ]
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  NuGetDirectory: ${{ github.workspace}}/nuget
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📝 Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+
+      - name: ⚙️ Setup .NET 9
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        id: setup-dotnet
+        with:
+          dotnet-version: 9.0.x
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
+        with:
+          bun-version: latest
+
+      - name: 📦 Cache DotNet Workloads
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.dotnet # Path to cache for SDKs and Workloads
+          key: ${{ runner.os }}-dotnet-workloads-${{ hashFiles('global.json') }}-${{ steps.setup-dotnet.outputs.dotnet-version }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-workloads-
+
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 📦 Cache DotNet Tools
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.dotnet/tools # Path to cache for global tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
+
+      - name: 🌳 Install GitVersion
+        uses: gittools/actions/gitversion/setup@b82e662a7199df56ac962118e506d9efb9830f82 # v4.1.0
+        with:
+          versionSpec: '6.x'
+
+      - name: 🔢 Determine Version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@b82e662a7199df56ac962118e506d9efb9830f82 # v4.1.0
+
+      - name: 💬 Display Version Info
+        run: |
+          echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+          echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
+
+      - name: 📥 Restore dependencies
+        run: |
+          cd ${{ github.workspace }}
+          dotnet workload restore
+          dotnet tool restore
+          dotnet restore
+
+      - name: 🔨 Build
+        run: |
+          cd ${{ github.workspace }}
+          dotnet build --no-restore
+
+      - name: 🚀 Test
+        run: |
+          cd ${{ github.workspace }}
+          dotnet test --no-build --verbosity normal

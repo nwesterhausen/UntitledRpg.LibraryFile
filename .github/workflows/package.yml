@@ -1,0 +1,90 @@
+name: Upload Packages
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*.*.*'
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  NuGetDirectory: ${{ github.workspace}}/nuget
+
+jobs:
+  package:
+    name: Create and Upload Packages
+    runs-on: ubuntu-latest
+    # Permissions are required to create a release and publish packages.
+    permissions:
+      contents: write
+      packages: write
+    continue-on-error: true # This ensures that if the packaging job fails, the overall workflow status is not affected.
+    outputs:
+      packages: ${{ steps.list_packages.outputs.matrix }}
+    steps:
+      - name: 📝 Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+            fetch-depth: 0 # required for gitversion to properly version
+
+      - name: ⚙️ Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 9.0.x # A single SDK version is sufficient for packaging.
+
+      - name: 🥟 Setup Bun
+        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
+        with:
+          bun-version: latest
+
+      - name: 📦 Cache DotNet Workloads
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.dotnet # Path to cache for SDKs and Workloads
+          key: ${{ runner.os }}-dotnet-workloads-${{ hashFiles('global.json') }}-${{ steps.setup-dotnet.outputs.dotnet-version }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-workloads-
+
+      - name: 📦 Cache NuGet packages
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: 📦 Cache DotNet Tools
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4
+        with:
+          path: ~/.dotnet/tools # Path to cache for global tools
+          key: ${{ runner.os }}-dotnet-tools-${{ hashFiles('.config/dotnet-tools.json') }}
+          restore-keys: |
+            ${{ runner.os }}-dotnet-tools-
+
+      - name: 📥 Restore dependencies
+        run: |
+          cd ${{ github.workspace }}
+          dotnet workload restore
+          dotnet tool restore
+          dotnet restore
+
+      - name: 📦 Create NuGet packages
+        run: |
+          cd ${{ github.workspace }}
+          dotnet build --configuration Release
+          dotnet pack --configuration Release --output ${{ env.NuGetDirectory }}
+
+      - name: 📤 Upload NuGet packages to GitHub Packages
+        run: |
+          for file in $(find ${{ env.NuGetDirectory }} -name "*.nupkg" ! -name "*.symbols.nupkg" ! -name "*.snupkg"); do
+            echo "Publishing $file"
+            dotnet nuget push "$file" --api-key "${{ secrets.GITHUB_TOKEN }}" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate
+          done
+
+      - name: 🎉 Attach Packages to GitHub Release
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: ${{ env.NuGetDirectory }}/*.nupkg
