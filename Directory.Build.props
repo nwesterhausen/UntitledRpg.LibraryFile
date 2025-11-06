@@ -34,7 +34,7 @@
 		</PackageReference>
 		<PackageReference Include="GitVersion.MsBuild">
 			<PrivateAssets>all</PrivateAssets>
-			<Version>6.4.0</Version>
+			<Version>6.5.0</Version>
 		</PackageReference>
 	</ItemGroup>
 
