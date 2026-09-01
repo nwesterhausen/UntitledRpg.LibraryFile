@@ -30,7 +30,7 @@
 	<ItemGroup>
 		<PackageReference Include="Microsoft.SourceLink.GitHub">
 			<PrivateAssets>all</PrivateAssets>
-			<Version>8.0.0</Version>
+			<Version>10.0.400</Version>
 		</PackageReference>
 		<PackageReference Include="GitVersion.MsBuild">
 			<PrivateAssets>all</PrivateAssets>
