@@ -34,14 +34,14 @@
 		</PackageReference>
 		<PackageReference Include="GitVersion.MsBuild">
 			<PrivateAssets>all</PrivateAssets>
-			<Version>6.5.0</Version>
+			<Version>6.8.2</Version>
 		</PackageReference>
 	</ItemGroup>
 
 	<ItemGroup Condition="'$(CI)' != 'true'">
 		<PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
 			<PrivateAssets>all</PrivateAssets>
-			<Version>3.9.50</Version>
+			<Version>3.10.94</Version>
 		</PackageReference>
 	</ItemGroup>
 </Project>
