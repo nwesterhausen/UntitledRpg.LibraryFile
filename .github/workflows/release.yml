@@ -20,18 +20,18 @@ jobs:
       packages: write
     steps:
       - name: 📝 Checkout repository
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0 # full depth required for gitversion
 
       - name: ⚙️ Setup .NET 9
-        uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5d # v5
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
         id: setup-dotnet
         with:
           dotnet-version: 9.0.x
 
       - name: 🥟 Setup Bun
-        uses: oven-sh/setup-bun@735343b667d3e6f658f44d0eca948eb6282f2b76 # v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with:
           bun-version: latest
 
@@ -60,13 +60,13 @@ jobs:
             ${{ runner.os }}-dotnet-tools-
 
       - name: 🌳 Install GitVersion
-        uses: gittools/actions/gitversion/setup@d0139503a9321f76b4a417dfdc8aebcec24decdd # v4.2.0
+        uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
           versionSpec: '6.x'
 
       - name: 🔢 Determine Version
         id: gitversion
-        uses: gittools/actions/gitversion/execute@d0139503a9321f76b4a417dfdc8aebcec24decdd # v4.2.0
+        uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
 
       - name: 💬 Display Version Info
         run: |
@@ -96,7 +96,7 @@ jobs:
           dotnet pack --configuration Release --no-build --output ${{ env.NuGetDirectory }}
 
       - name: 🎉 Create GitHub Release
-        uses: softprops/action-gh-release@5be0e66d93ac7ed76da52eca8bb058f665c3a5fe # v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
