@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace UntitledRpgLogic.LibraryFile;
 
@@ -22,6 +23,27 @@ public class UrpglibFileFormatException : Exception
 	/// <param name="message">The message that describes the error.</param>
 	/// <param name="innerException">The exception that caused the current exception, or <see langword="null"/> if no inner exception is specified.</param>
 	public UrpglibFileFormatException(string message, Exception innerException) : base(message, innerException) { }
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibFileFormatException" /> with speicfied message.
+	/// </summary>
+	/// <param name="message">Details for the exception</param>
+	[DoesNotReturn]
+	public static void Throw(string message) =>
+		throw new UrpglibFileFormatException(message);
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibFileFormatException" /> with speicfied message if a condition is met.
+	/// </summary>
+	/// <param name="condition">Condition that must be true to thow</param>
+	/// <param name="message">Details for the exception</param>
+	public static void ThrowIf(bool condition, string message)
+	{
+		if (condition)
+		{
+			Throw(message);
+		}
+	}
 }
 
 /// <summary>
@@ -43,6 +65,27 @@ public class UrpglibVersionMismatchException : UrpglibFileFormatException
 	/// <param name="message">The error message that explains the reason for the exception.</param>
 	/// <param name="innerException">The exception that caused the current exception, or <see langword="null"/> if no inner exception is specified.</param>
 	public UrpglibVersionMismatchException(string message, Exception innerException) : base(message, innerException) { }
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibVersionMismatchException" /> with speicfied message.
+	/// </summary>
+	/// <param name="message">Details for the exception</param>
+	[DoesNotReturn]
+	public static new void Throw(string message) =>
+		throw new UrpglibVersionMismatchException(message);
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibVersionMismatchException" /> with speicfied message if a condition is met.
+	/// </summary>
+	/// <param name="condition">Condition that must be true to thow</param>
+	/// <param name="message">Details for the exception</param>
+	public static new void ThrowIf(bool condition, string message)
+	{
+		if (condition)
+		{
+			Throw(message);
+		}
+	}
 }
 
 /// <summary>
@@ -63,4 +106,25 @@ public class UrpglibFileSizeException : UrpglibFileFormatException
 	/// <param name="message">The message that describes the error.</param>
 	/// <param name="innerException">The exception that caused the current exception, or <see langword="null"/> if no inner exception is specified.</param>
 	public UrpglibFileSizeException(string message, Exception innerException) : base(message, innerException) { }
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibFileSizeException" /> with speicfied message.
+	/// </summary>
+	/// <param name="message">Details for the exception</param>
+	[DoesNotReturn]
+	public static new void Throw(string message) =>
+		throw new UrpglibFileSizeException(message);
+
+	/// <summary>
+	/// 	Throw a <see cref="UrpglibFileSizeException" /> with speicfied message if a condition is met.
+	/// </summary>
+	/// <param name="condition">Condition that must be true to thow</param>
+	/// <param name="message">Details for the exception</param>
+	public static new void ThrowIf(bool condition, string message)
+	{
+		if (condition)
+		{
+			Throw(message);
+		}
+	}
 }

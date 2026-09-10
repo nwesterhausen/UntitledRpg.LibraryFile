@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 
@@ -6,6 +7,7 @@ namespace UntitledRpgLogic.LibraryFile.Tests;
 [TestClass]
 public sealed class UrpglibReaderTests : IDisposable
 {
+	private const string TEST_ULID_BASE32 = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
 	private readonly string tempDirectory;
 
 	public void Dispose()
@@ -58,6 +60,19 @@ public sealed class UrpglibReaderTests : IDisposable
 			Assert.IsNotNull(package.Manifest);
 			Assert.AreEqual(manifest.Name, package.Manifest.Name);
 			Assert.AreEqual(manifest.AuthorName, package.Manifest.AuthorName);
+			Assert.AreEqual(manifest.Id, package.Manifest.Id, "Manifest Id did not survive JSON round-trip.");
+
+			if (manifest.Dependencies != null)
+			{
+				Assert.IsNotNull(package.Manifest.Dependencies);
+				Assert.HasCount(manifest.Dependencies.Count, package.Manifest.Dependencies);
+
+				for (var i = 0; i < manifest.Dependencies.Count; i++)
+				{
+					Assert.AreEqual(manifest.Dependencies[i].Key, package.Manifest.Dependencies[i].Key);
+					Assert.AreEqual(manifest.Dependencies[i].Value, package.Manifest.Dependencies[i].Value);
+				}
+			}
 		}
 	}
 
@@ -251,16 +266,21 @@ public sealed class UrpglibReaderTests : IDisposable
 
 	#region Helper Methods
 
-	private static PackageManifest CreateTestManifest()
+
+	private static PackageManifest CreateTestManifest() => new PackageManifest
 	{
-		return new PackageManifest
-		{
-			Name = "Test Package",
-			AuthorName = "Test Author",
-			Description = "A test package for unit testing",
-			Version = "1.2.3"
-		};
-	}
+		// Explicitly set to test serialization
+		Id = Ulid.Parse(TEST_ULID_BASE32, CultureInfo.InvariantCulture),
+		Name = "Test Package",
+		AuthorName = "Test Author",
+		Description = "A test package for unit testing",
+		Version = "1.2.3",
+		Dependencies =
+		[
+			new KeyValuePair<Ulid, int>(Ulid.NewUlid(), 1),
+			new KeyValuePair<Ulid, int>(Ulid.NewUlid(), 2)
+		]
+	};
 
 	private static async Task CreateValidUrpglibFile(string filePath, PackageManifest manifest, PayloadCompressionType compression = PayloadCompressionType.None)
 	{

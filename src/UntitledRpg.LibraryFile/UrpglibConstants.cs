@@ -22,7 +22,7 @@ public static class UrpglibConstants
 	/// <summary>
 	/// The current version of the manifest structure this library can write.
 	/// </summary>
-	public const ushort CurrentManifestSchemaVersion = 1;
+	public const ushort CurrentManifestSchemaVersion = 2;
 
 	/// <summary>
 	/// The current version of the payload data structure this library can write.
@@ -66,6 +66,11 @@ public static class UrpglibConstants
 	public static readonly JsonSerializerOptions? DefaultJsonSerializerOptions = new JsonSerializerOptions
 	{
 		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-		WriteIndented = false
+		PropertyNameCaseInsensitive = true,
+		WriteIndented = false,
+		Converters =
+		{
+			new UlidJsonConverter()
+		}
 	};
 }

@@ -40,10 +40,8 @@ public sealed class UrpglibPackage : IDisposable
 	/// <exception cref="InvalidOperationException">Thrown if the package is disposed.</exception>
 	public TarReader OpenPayload()
 	{
-		if (this.disposed)
-		{
-			throw new InvalidOperationException("Cannot open payload from a disposed package.");
-		}
+		ObjectDisposedException.ThrowIf(this.disposed, this);
+
 
 		// Reset position to the beginning of the payload stream for reading.
 		this.payloadStream.Position = 0;

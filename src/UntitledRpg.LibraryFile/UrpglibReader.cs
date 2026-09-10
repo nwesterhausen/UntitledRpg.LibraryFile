@@ -44,7 +44,7 @@ public static class UrpglibReader
 		if (!magic.SequenceEqual(UrpglibConstants.MagicBytes))
 		{
 			await fileStream.DisposeAsync().ConfigureAwait(false);
-			throw new UrpglibFileFormatException("Invalid file signature. This is not a valid .urpglib file.");
+			UrpglibFileFormatException.Throw("Invalid file signature. This is not a valid .urpglib file.");
 		}
 
 		var header = new UrpglibHeader

@@ -12,10 +12,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="..\..\README.md" Pack="true" PackagePath="\" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<PackageReference Include="Ulid" />
 	</ItemGroup>
 

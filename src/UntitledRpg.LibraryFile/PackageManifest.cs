@@ -64,9 +64,9 @@ public sealed record PackageManifest
 	/// <summary>
 	///		The unique identifier of the author or organization that created the library package.
 	/// </summary>
-	public Guid AuthorId { get; set; } = Guid.NewGuid();
+	public Ulid AuthorId { get; set; } = Ulid.NewUlid();
 	/// <summary>
 	///		A list of dependencies for this library package, represented by their unique identifiers. Includes the minimum required version for each dependency.
 	/// </summary>
-	public KeyValuePair<Guid, int>[] Dependencies { get; set; } = [];
+	public IReadOnlyList<KeyValuePair<Ulid, int>> Dependencies { get; set; } = [];
 }
