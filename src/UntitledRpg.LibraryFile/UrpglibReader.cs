@@ -44,7 +44,7 @@ public static class UrpglibReader
 		if (!magic.SequenceEqual(UrpglibConstants.MagicBytes))
 		{
 			await fileStream.DisposeAsync().ConfigureAwait(false);
-			UrpglibFileFormatException.Throw("Invalid file signature. This is not a valid .urpglib file.");
+			UrpglibInvalidSignatureException.Throw();
 		}
 
 		var header = new UrpglibHeader
@@ -82,7 +82,7 @@ public static class UrpglibReader
 
 		// 2. Read and Deserialize Manifest
 		var manifestJsonBytes = reader.ReadBytes((int)header.ManifestLength);
-		PackageManifest? manifest;
+		PackageManifest? manifest = null;
 		try
 		{
 			manifest = JsonSerializer.Deserialize<PackageManifest>(manifestJsonBytes, UrpglibConstants.DefaultJsonSerializerOptions);
@@ -90,13 +90,13 @@ public static class UrpglibReader
 		catch (JsonException ex)
 		{
 			await fileStream.DisposeAsync().ConfigureAwait(false);
-			throw new UrpglibFileFormatException("Failed to deserialize package manifest.", ex);
+			UrpglibManifestDeserializationException.ThrowWith(ex);
 		}
 
 		if (manifest == null)
 		{
 			await fileStream.DisposeAsync().ConfigureAwait(false);
-			throw new UrpglibFileFormatException("Failed to deserialize package manifest.");
+			UrpglibManifestDeserializationException.Throw();
 		}
 
 		// --- Size Sanity Check ---
@@ -104,7 +104,7 @@ public static class UrpglibReader
 		if (fileStream.Length - fileStream.Position <= 0)
 		{
 			await fileStream.DisposeAsync().ConfigureAwait(false);
-			throw new UrpglibFileFormatException("Payload size is zero or negative. The file may be corrupted.");
+			UrpglibInvalidPayloadSizeException.Throw();
 		}
 
 		// 3. Prepare Payload Stream

@@ -88,7 +88,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		]).ConfigureAwait(false);
 
 		// Act & Assert
-		var exception = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(
+		var exception = await Assert.ThrowsExactlyAsync<UrpglibInvalidSignatureException>(
 			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
 
 		Assert.IsNotNull(exception);
@@ -119,7 +119,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateUrpglibFileWithInvalidManifest(filePath).ConfigureAwait(false);
 
 		// Act & Assert
-		var exception = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(
+		var exception = await Assert.ThrowsExactlyAsync<UrpglibManifestDeserializationException>(
 			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
 
 		Assert.IsNotNull(exception);
