@@ -1,0 +1,5 @@
+[*.cs]
+# Disable "normal" style option warnings for tests
+dotnet_diagnostic.CA1515.severity = none
+dotnet_diagnostic.CA1591.severity = none
+dotnet_diagnostic.CA1707.severity = none

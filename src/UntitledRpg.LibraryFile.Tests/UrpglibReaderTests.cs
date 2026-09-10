@@ -1,16 +1,10 @@
 using System.Text;
 using System.Text.Json;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable CA1707 // Naming rules disallow underscores in identifiers
 
 namespace UntitledRpgLogic.LibraryFile.Tests;
 
 [TestClass]
-#pragma warning disable CA1515
 public sealed class UrpglibReaderTests : IDisposable
-#pragma warning restore CA1515
 {
 	private readonly string tempDirectory;
 
@@ -248,7 +242,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
 		// Assert
-		Assert.AreEqual(10, results.Length);
+		Assert.HasCount(10, results);
 		foreach (var result in results)
 		{
 			Assert.AreEqual(manifest.Name, result);

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace UntitledRpgLogic.LibraryFile;
 
 /// <summary>
@@ -8,7 +11,7 @@ public sealed record PackageManifest
 	/// <summary>
 	/// The unique identifier for the library package.
 	/// </summary>
-	public Guid Id { get; set; } = Guid.NewGuid();
+	public Ulid Id { get; set; } = Ulid.NewUlid();
 	/// <summary>
 	/// The name of the library package.
 	/// </summary>

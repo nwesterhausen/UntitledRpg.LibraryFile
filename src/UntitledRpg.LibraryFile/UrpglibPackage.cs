@@ -1,4 +1,6 @@
+using System;
 using System.Formats.Tar;
+using System.IO;
 using System.IO.Compression;
 
 
@@ -108,7 +110,7 @@ public static class Example
         try
         {
             await using var package = await UrpgReader.ReadAsync(packagePath);
-            
+
             Console.WriteLine($"Package Name: {package.Manifest.Name}");
             Console.WriteLine($"Author: {package.Manifest.AuthorName}");
             Console.WriteLine($"Version: {package.Manifest.Version}");
