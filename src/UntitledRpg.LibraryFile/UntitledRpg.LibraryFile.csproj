@@ -12,7 +12,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Ulid" />
+		<PackageReference Include="Ulid"/>
 	</ItemGroup>
 
 </Project>

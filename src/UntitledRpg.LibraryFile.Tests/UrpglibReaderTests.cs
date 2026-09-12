@@ -27,7 +27,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateValidUrpglibFile(filePath, manifest).ConfigureAwait(true);
 
 		// Act
-		var package = await UrpglibReader.ReadAsync(filePath, readPayloadIntoMemory: true).ConfigureAwait(true);
+		var package = await UrpglibReader.ReadAsync(filePath, true).ConfigureAwait(true);
 
 		// Assert
 		using (package)
@@ -50,7 +50,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateValidUrpglibFile(filePath, manifest).ConfigureAwait(false);
 
 		// Act
-		var package = await UrpglibReader.ReadAsync(filePath, readPayloadIntoMemory: false).ConfigureAwait(false);
+		var package = await UrpglibReader.ReadAsync(filePath).ConfigureAwait(false);
 
 		// Assert
 		using (package)
@@ -88,11 +88,13 @@ public sealed class UrpglibReaderTests : IDisposable
 		]).ConfigureAwait(false);
 
 		// Act & Assert
-		var exception = await Assert.ThrowsExactlyAsync<UrpglibInvalidSignatureException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		var exception = await Assert
+			.ThrowsExactlyAsync<UrpglibInvalidSignatureException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 
 		Assert.IsNotNull(exception);
-		Assert.IsTrue(exception.Message.Contains("Invalid file signature", StringComparison.InvariantCultureIgnoreCase));
+		Assert.IsTrue(exception.Message.Contains("Invalid file signature",
+			StringComparison.InvariantCultureIgnoreCase));
 	}
 
 	[TestMethod]
@@ -101,14 +103,17 @@ public sealed class UrpglibReaderTests : IDisposable
 		// Arrange
 		var filePath = Path.Combine(this.tempDirectory, "newer_version.urpglib");
 		var manifest = CreateTestManifest();
-		await CreateUrpglibFileWithVersion(filePath, manifest, UrpglibConstants.CurrentHeaderSchemaVersion + 1).ConfigureAwait(false);
+		await CreateUrpglibFileWithVersion(filePath, manifest, UrpglibConstants.CurrentHeaderSchemaVersion + 1)
+			.ConfigureAwait(false);
 
 		// Act & Assert
-		var exception = await Assert.ThrowsExactlyAsync<UrpglibVersionMismatchException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		var exception = await Assert
+			.ThrowsExactlyAsync<UrpglibVersionMismatchException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 
 		Assert.IsNotNull(exception);
-		Assert.IsTrue(exception.Message.Contains("newer than supported version", StringComparison.InvariantCultureIgnoreCase));
+		Assert.IsTrue(exception.Message.Contains("newer than supported version",
+			StringComparison.InvariantCultureIgnoreCase));
 	}
 
 	[TestMethod]
@@ -119,11 +124,13 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateUrpglibFileWithInvalidManifest(filePath).ConfigureAwait(false);
 
 		// Act & Assert
-		var exception = await Assert.ThrowsExactlyAsync<UrpglibManifestDeserializationException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		var exception = await Assert
+			.ThrowsExactlyAsync<UrpglibManifestDeserializationException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 
 		Assert.IsNotNull(exception);
-		Assert.IsTrue(exception.Message.Contains("Failed to deserialize package manifest", StringComparison.InvariantCultureIgnoreCase));
+		Assert.IsTrue(exception.Message.Contains("Failed to deserialize package manifest",
+			StringComparison.InvariantCultureIgnoreCase));
 	}
 
 	[TestMethod]
@@ -134,8 +141,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		await File.WriteAllBytesAsync(filePath, []).ConfigureAwait(false);
 
 		// Act & Assert
-		_ = await Assert.ThrowsExactlyAsync<UrpglibFileSizeException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		_ = await Assert.ThrowsExactlyAsync<UrpglibFileSizeException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 	}
 
 	[TestMethod]
@@ -164,7 +171,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		// Arrange
 		var filePath = Path.Combine(this.tempDirectory, "no_compression_test.urpglib");
 		var manifest = CreateTestManifest();
-		await CreateValidUrpglibFile(filePath, manifest, PayloadCompressionType.None).ConfigureAwait(false);
+		await CreateValidUrpglibFile(filePath, manifest).ConfigureAwait(false);
 
 		// Act
 		var package = await UrpglibReader.ReadAsync(filePath).ConfigureAwait(false);
@@ -206,8 +213,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		var filePath = Path.Combine(this.tempDirectory, "nonexistent.urpglib");
 
 		// Act & Assert
-		_ = await Assert.ThrowsExactlyAsync<FileNotFoundException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		_ = await Assert.ThrowsExactlyAsync<FileNotFoundException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 	}
 
 	[TestMethod]
@@ -219,8 +226,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateUrpglibFileWithManifestLength(filePath, 10).ConfigureAwait(false);
 
 		// Act & Assert
-		_ = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		_ = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 	}
 
 	[TestMethod]
@@ -231,8 +238,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		await CreateUrpglibFileWithManifestLength(filePath, 0).ConfigureAwait(false);
 
 		// Act & Assert
-		_ = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(
-			() => UrpglibReader.ReadAsync(filePath)).ConfigureAwait(false);
+		_ = await Assert.ThrowsExactlyAsync<UrpglibFileFormatException>(() => UrpglibReader.ReadAsync(filePath))
+			.ConfigureAwait(false);
 	}
 
 	[TestMethod]
@@ -246,7 +253,7 @@ public sealed class UrpglibReaderTests : IDisposable
 		// Act
 		var tasks = Enumerable.Range(0, 10).Select(async _ =>
 		{
-			var package = await UrpglibReader.ReadAsync(filePath, readPayloadIntoMemory: true).ConfigureAwait(false);
+			var package = await UrpglibReader.ReadAsync(filePath, true).ConfigureAwait(false);
 			using (package)
 			{
 				Assert.IsNotNull(package.Manifest);
@@ -264,10 +271,28 @@ public sealed class UrpglibReaderTests : IDisposable
 		}
 	}
 
+	[TestMethod]
+	[DataRow(true)]
+	[DataRow(false)]
+	public async Task ReadAsync_CanOpenPayloadAndReadEntries(bool readIntoMemory)
+	{
+		var filePath = Path.Combine(this.tempDirectory, $"payload_test_{readIntoMemory}.urpglib");
+		var manifest = CreateTestManifest();
+		var files = new Dictionary<string, byte[]> { ["test.txt"] = "Hello World"u8.ToArray() };
+
+		await UrpglibWriter.WriteAsync(filePath, manifest, files).ConfigureAwait(false);
+
+		using var package = await UrpglibReader.ReadAsync(filePath, readIntoMemory).ConfigureAwait(false);
+		using var tarReader = package.OpenPayload();
+
+		var entry = await tarReader.GetNextEntryAsync().ConfigureAwait(false);
+		Assert.IsNotNull(entry);
+		Assert.AreEqual("test.txt", entry.Name);
+	}
+
 	#region Helper Methods
 
-
-	private static PackageManifest CreateTestManifest() => new PackageManifest
+	private static PackageManifest CreateTestManifest() => new()
 	{
 		// Explicitly set to test serialization
 		Id = Ulid.Parse(TEST_ULID_BASE32, CultureInfo.InvariantCulture),
@@ -282,7 +307,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		]
 	};
 
-	private static async Task CreateValidUrpglibFile(string filePath, PackageManifest manifest, PayloadCompressionType compression = PayloadCompressionType.None)
+	private static async Task CreateValidUrpglibFile(string filePath, PackageManifest manifest,
+		PayloadCompressionType compression = PayloadCompressionType.None)
 	{
 		var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
 		await using var stream = fileStream.ConfigureAwait(false);
@@ -309,7 +335,8 @@ public sealed class UrpglibReaderTests : IDisposable
 		writer.Write(dummyPayload);
 	}
 
-	private static async Task CreateUrpglibFileWithVersion(string filePath, PackageManifest manifest, byte headerVersion)
+	private static async Task CreateUrpglibFileWithVersion(string filePath, PackageManifest manifest,
+		byte headerVersion)
 	{
 		var fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write);
 		await using var stream = fileStream.ConfigureAwait(false);

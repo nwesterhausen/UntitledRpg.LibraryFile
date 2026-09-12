@@ -7,7 +7,7 @@ namespace UntitledRpgLogic.LibraryFile;
 
 /// <summary>
 ///     Enables System.Text.Json to serialize and deserialize <see cref="Ulid" /> values to and from Base32 strings.
-/// 	(This should be the default behavior, but explicitly defining a converter like this ensures it.)
+///     (This should be the default behavior, but explicitly defining a converter like this ensures it.)
 /// </summary>
 public sealed class UlidJsonConverter : JsonConverter<Ulid>
 {
@@ -26,7 +26,8 @@ public sealed class UlidJsonConverter : JsonConverter<Ulid>
 	}
 
 	/// <inheritdoc />
-	public override Ulid ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+	public override Ulid ReadAsPropertyName(ref Utf8JsonReader reader, Type typeToConvert,
+		JsonSerializerOptions options)
 	{
 		var value = reader.GetString();
 		return string.IsNullOrEmpty(value) ? Ulid.Empty : Ulid.Parse(value, CultureInfo.InvariantCulture);

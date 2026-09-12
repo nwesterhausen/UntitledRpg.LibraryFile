@@ -10,63 +10,56 @@ using System.Threading.Tasks;
 namespace UntitledRpgLogic.LibraryFile;
 
 /// <summary>
-///		Handles writing .urpglib files, including header, manifest, and payload.
+///     Handles writing .urpglib files, including header, manifest, and payload.
 /// </summary>
 public static class UrpglibWriter
 {
-
 	/// <summary>
-	/// Creates a .urpglib file from a manifest and a collection of data files.
+	///     Creates a .urpglib file from a manifest and a collection of data files.
 	/// </summary>
 	/// <param name="outputPath">The path to write the .urpglib file.</param>
 	/// <param name="manifest">The package manifest data.</param>
 	/// <param name="files">A dictionary where the key is the path inside the archive and the value is the file content.</param>
 	/// <param name="compressionType">The compression to use for the payload.</param>
-	public static async Task WriteAsync(string outputPath, PackageManifest manifest, IReadOnlyDictionary<string, byte[]> files, PayloadCompressionType compressionType = PayloadCompressionType.Gzip)
+	public static async Task WriteAsync(string outputPath, PackageManifest manifest,
+		IReadOnlyDictionary<string, byte[]> files, PayloadCompressionType compressionType = PayloadCompressionType.Gzip)
 	{
 		// 1. Create the compressed payload in memory.
+		byte[] payloadBytes;
 		var payloadStream = new MemoryStream();
-
-		Stream compressionStream = compressionType switch
+		await using (payloadStream.ConfigureAwait(false))
 		{
-			PayloadCompressionType.Gzip => new GZipStream(payloadStream, CompressionMode.Compress, leaveOpen: true),
-			PayloadCompressionType.None => payloadStream // No compression, write directly to memory stream
-			,
-			_ => throw new NotSupportedException($"Compression type '{compressionType}' is not supported for writing.")
-		};
-
-		// Leave the following check in place, because the signature doesn't allow null but this is a library method.
-		// ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-		if (files is not null)
-		{
-			await using (compressionStream.ConfigureAwait(false))
+			switch (compressionType)
 			{
-				var tarWriter = new TarWriter(compressionStream);
-				await using (tarWriter.ConfigureAwait(false))
-				{
-					foreach (var file in files)
+				case PayloadCompressionType.Gzip:
 					{
-						var tarEntry = new PaxTarEntry(TarEntryType.RegularFile, file.Key) { DataStream = new MemoryStream(file.Value) };
-						await tarWriter.WriteEntryAsync(tarEntry).ConfigureAwait(false);
+						var gzipStream = new GZipStream(payloadStream, CompressionMode.Compress, true);
+						await using (gzipStream.ConfigureAwait(false))
+						{
+							await WriteTarArchiveAsync(gzipStream, files).ConfigureAwait(false);
+						}
+
+						break;
 					}
-				}
+				case PayloadCompressionType.None:
+					await WriteTarArchiveAsync(payloadStream, files).ConfigureAwait(false);
+					break;
+				default:
+					throw new NotSupportedException(
+						$"Compression type '{compressionType}' is not supported for writing.");
 			}
+
+			payloadBytes = payloadStream.ToArray();
 		}
 
-		await compressionStream.FlushAsync().ConfigureAwait(false);
-
-		var payloadBytes = payloadStream.ToArray();
-
-		await payloadStream.DisposeAsync().ConfigureAwait(false);
-		await compressionStream.DisposeAsync().ConfigureAwait(false);
-
 		// 2. Serialize manifest to JSON
-		var manifestJsonBytes = JsonSerializer.SerializeToUtf8Bytes(manifest, UrpglibConstants.DefaultJsonSerializerOptions);
+		var manifestJsonBytes =
+			JsonSerializer.SerializeToUtf8Bytes(manifest, UrpglibConstants.DefaultJsonSerializerOptions);
 
 		// 3. Write the final .urpglib file
 		var fileStream = new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.None);
 		await using var stream = fileStream.ConfigureAwait(false);
-		var writer = new BinaryWriter(fileStream, Encoding.UTF8, leaveOpen: false);
+		var writer = new BinaryWriter(fileStream, Encoding.UTF8, false);
 		await using var writer1 = writer.ConfigureAwait(false);
 
 		// -- Write Header --
@@ -82,5 +75,24 @@ public static class UrpglibWriter
 
 		// -- Write Payload --
 		writer.Write(payloadBytes);
+	}
+
+	private static async Task WriteTarArchiveAsync(Stream targetStream, IReadOnlyDictionary<string, byte[]>? files)
+	{
+		if (files is null or { Count: 0 })
+		{
+			return;
+		}
+
+		var tarWriter = new TarWriter(targetStream, true);
+		await using (tarWriter.ConfigureAwait(false))
+		{
+			foreach (var file in files)
+			{
+				using var dataStream = new MemoryStream(file.Value);
+				var tarEntry = new PaxTarEntry(TarEntryType.RegularFile, file.Key) { DataStream = dataStream };
+				await tarWriter.WriteEntryAsync(tarEntry).ConfigureAwait(false);
+			}
+		}
 	}
 }

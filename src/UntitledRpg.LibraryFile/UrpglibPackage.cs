@@ -3,25 +3,14 @@ using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 
-
 namespace UntitledRpgLogic.LibraryFile;
 
 /// <summary>
-/// Represents the complete, deserialized .urpglib package,
-/// providing access to its manifest and a stream for its payload data.
+///     Represents the complete, deserialized .urpglib package,
+///     providing access to its manifest and a stream for its payload data.
 /// </summary>
 public sealed class UrpglibPackage : IDisposable
 {
-	/// <summary>
-	/// The structured header data read from the file.
-	/// </summary>
-	public UrpglibHeader Header { get; }
-
-	/// <summary>
-	/// The deserialized manifest containing package metadata.
-	/// </summary>
-	public PackageManifest? Manifest { get; }
-
 	private readonly Stream payloadStream;
 	private bool disposed;
 
@@ -33,28 +22,14 @@ public sealed class UrpglibPackage : IDisposable
 	}
 
 	/// <summary>
-	/// Opens the compressed payload as a TarReader for iterating through the contained files.
-	/// The caller is responsible for disposing the TarReader.
+	///     The structured header data read from the file.
 	/// </summary>
-	/// <returns>A new TarReader instance for the payload.</returns>
-	/// <exception cref="InvalidOperationException">Thrown if the package is disposed.</exception>
-	public TarReader OpenPayload()
-	{
-		ObjectDisposedException.ThrowIf(this.disposed, this);
+	public UrpglibHeader Header { get; }
 
-
-		// Reset position to the beginning of the payload stream for reading.
-		this.payloadStream.Position = 0;
-
-		var decompressionStream = this.Header.PayloadCompression switch
-		{
-			PayloadCompressionType.Gzip => new GZipStream(this.payloadStream, CompressionMode.Decompress, leaveOpen: true),
-			PayloadCompressionType.None => this.payloadStream,
-			_ => throw new NotSupportedException($"Payload compression type '{this.Header.PayloadCompression}' is not supported.")
-		};
-
-		return new TarReader(decompressionStream);
-	}
+	/// <summary>
+	///     The deserialized manifest containing package metadata.
+	/// </summary>
+	public PackageManifest? Manifest { get; }
 
 	/// <inheritdoc />
 	public void Dispose()
@@ -67,9 +42,37 @@ public sealed class UrpglibPackage : IDisposable
 		this.payloadStream.Dispose();
 		this.disposed = true;
 	}
+
+	/// <summary>
+	///     Opens the compressed payload as a TarReader for iterating through the contained files.
+	///     The caller is responsible for disposing the TarReader.
+	/// </summary>
+	/// <returns>A new TarReader instance for the payload.</returns>
+	/// <exception cref="InvalidOperationException">Thrown if the package is disposed.</exception>
+	public TarReader OpenPayload()
+	{
+		ObjectDisposedException.ThrowIf(this.disposed, this);
+
+		// Only reset if this is an in-memory buffer dedicated to the payload
+		if (this.payloadStream is MemoryStream)
+		{
+			this.payloadStream.Position = 0;
+		}
+
+		var decompressionStream = this.Header.PayloadCompression switch
+		{
+			PayloadCompressionType.Gzip => new GZipStream(this.payloadStream, CompressionMode.Decompress, true),
+			PayloadCompressionType.None => this.payloadStream,
+			_ => throw new NotSupportedException(
+				$"Payload compression type '{this.Header.PayloadCompression}' is not supported.")
+		};
+
+		return new TarReader(decompressionStream);
+	}
 }
 
 #region --- Usage Example ---
+
 /*
 public static class Example
 {
@@ -138,4 +141,5 @@ public static class Example
     }
 }
 */
+
 #endregion
