@@ -10,13 +10,13 @@ The `UntitledRpg.LibraryFile` library provides a high-level API for reading, str
 
 ## Core Types
 
-* **`UrpgFile`**: Static facade providing primary entry points for inspection, extraction, packaging, and validation.
+* **`UrpglibFile`**: Static facade providing primary entry points for inspection, extraction, packaging, and validation.
 * **`UrpglibPackage`**: An open package instance providing access to header metadata, manifest information, and payload contents.
 
 
-* **`UrpgPackageEntry`**: A single file entry within the payload stream, offering zero-allocation stream access, UTF-8 string parsing, or raw byte loading.
-* **`UrpgPackageBuilder`**: Fluent builder for creating new `.urpglib` archives from directories, files, or in-memory byte arrays.
-* **`UrpgValidationResult`**: Diagnostic report containing status flags, schema versions, manifest data, and error details.
+* **`UrpglibPackageEntry`**: A single file entry within the payload stream, offering zero-allocation stream access, UTF-8 string parsing, or raw byte loading.
+* **`UrpglibPackageBuilder`**: Fluent builder for creating new `.urpglib` archives from directories, files, or in-memory byte arrays.
+* **`UrpglibValidationResult`**: Diagnostic report containing status flags, schema versions, manifest data, and error details.
 
 ---
 
@@ -30,7 +30,7 @@ Read package metadata without decompressing or allocating the payload:
 using UntitledRpg.LibraryFile;
 
 // Inspect metadata from a file path
-PackageManifest manifest = await UrpgFile.ReadManifestAsync("CoreGameplay.urpglib");
+PackageManifest manifest = await UrpglibFile.ReadManifestAsync("CoreGameplay.urpglib");
 
 Console.WriteLine($"Package: {manifest.Name} v{manifest.Version}");
 Console.WriteLine($"Author: {manifest.AuthorName} ({manifest.AuthorId})");
@@ -38,7 +38,7 @@ Console.WriteLine($"Dependencies: {manifest.Dependencies.Count}");
 
 // Inspect metadata directly from an open Stream
 await using var networkStream = GetPackageStream();
-PackageManifest remoteManifest = await UrpgFile.ReadManifestAsync(networkStream);
+PackageManifest remoteManifest = await UrpglibFile.ReadManifestAsync(networkStream);
 
 ```
 
@@ -49,10 +49,10 @@ Stream entries sequentially to parse files directly into records without holding
 ```csharp
 using UntitledRpg.LibraryFile;
 
-await using var package = await UrpgFile.OpenReadAsync("CoreGameplay.urpglib");
+await using var package = await UrpglibFile.OpenReadAsync("CoreGameplay.urpglib");
 
 // Iterate over entries directly from the decompressed Tar stream
-await foreach (UrpgPackageEntry entry in package.ReadEntriesAsync())
+await foreach (UrpglibPackageEntry entry in package.ReadEntriesAsync())
 {
     if (entry.Name.EndsWith(".toml", StringComparison.OrdinalIgnoreCase))
     {
@@ -80,13 +80,13 @@ Unpack an archive back into its directory structure:
 using UntitledRpg.LibraryFile;
 
 // One-liner extraction
-await UrpgFile.ExtractToDirectoryAsync(
+await UrpglibFile.ExtractToDirectoryAsync(
     packagePath: "CoreGameplay.urpglib", 
     destinationDirectory: "./GameData/Extracted", 
     overwrite: true);
 
 // Or extract from an already opened package
-await using var package = await UrpgFile.OpenReadAsync("CoreGameplay.urpglib");
+await using var package = await UrpglibFile.OpenReadAsync("CoreGameplay.urpglib");
 await package.ExtractToDirectoryAsync("./GameData/Extracted", overwrite: true);
 
 ```
@@ -98,7 +98,7 @@ Verify binary magic bytes, schema versions, manifest JSON deserialization, and p
 ```csharp
 using UntitledRpg.LibraryFile;
 
-UrpgValidationResult result = await UrpgFile.ValidateAsync("ModPackage.urpglib", validatePayload: true);
+UrpglibValidationResult result = await UrpglibFile.ValidateAsync("ModPackage.urpglib", validatePayload: true);
 
 if (!result.IsValid)
 {
@@ -133,7 +133,7 @@ var manifest = new PackageManifest
     Description = "Base equipment and item configurations"
 };
 
-await UrpgFile.CreateFromDirectoryAsync(
+await UrpglibFile.CreateFromDirectoryAsync(
     sourceDirectory: "./RawContent/Items",
     destinationPackagePath: "./Output/Items.urpglib",
     manifest: manifest,
@@ -156,7 +156,7 @@ var manifest = new PackageManifest
 
 byte[] generatedConfig = Encoding.UTF8.GetBytes("difficulty = 5\nenemy_count = 12");
 
-await new UrpgPackageBuilder()
+await new UrpglibPackageBuilder()
     .WithManifest(manifest)
     .WithCompression(PayloadCompressionType.Gzip)
     .AddDirectory("./Content/Monsters", entryPrefix: "monsters")
@@ -173,7 +173,7 @@ For modding tools or editors that need random access by file path rather than ba
 ```csharp
 using UntitledRpg.LibraryFile;
 
-await using var package = await UrpgFile.OpenReadAsync("CoreGameplay.urpglib");
+await using var package = await UrpglibFile.OpenReadAsync("CoreGameplay.urpglib");
 
 // Unpacks all files into memory at once
 IReadOnlyDictionary<string, byte[]> fileMap = await package.ReadAllToMemoryAsync();
@@ -194,4 +194,4 @@ if (fileMap.TryGetValue("items/weapons/sword.toml", out byte[]? swordData))
 * **Use `ReadManifestAsync()` for Fast Scans:** Use this in mod loaders or main menus to build metadata catalogs without paying decompression overhead.
 
 
-* **Handle Disposal Cleanly:** `UrpglibPackage` implements both `IDisposable` and `IAsyncDisposable`. When using asynchronous flows, prefer `await using var package = await UrpgFile.OpenReadAsync(...)` to ensure internal streams and file locks release cleanly.age.
+* **Handle Disposal Cleanly:** `UrpglibPackage` implements both `IDisposable` and `IAsyncDisposable`. When using asynchronous flows, prefer `await using var package = await UrpglibFile.OpenReadAsync(...)` to ensure internal streams and file locks release cleanly.age.
