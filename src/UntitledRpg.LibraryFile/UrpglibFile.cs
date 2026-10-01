@@ -83,8 +83,11 @@ public static class UrpglibFile
 		bool overwrite = false,
 		CancellationToken ct = default)
 	{
-		using var package = await OpenReadAsync(packagePath, ct).ConfigureAwait(false);
-		await package.ExtractToDirectoryAsync(destinationDirectory, overwrite, ct).ConfigureAwait(false);
+		var package = await OpenReadAsync(packagePath, ct).ConfigureAwait(false);
+		await using (package.ConfigureAwait(false))
+		{
+			await package.ExtractToDirectoryAsync(destinationDirectory, overwrite, ct).ConfigureAwait(false);
+		}
 	}
 
 	/// <summary>

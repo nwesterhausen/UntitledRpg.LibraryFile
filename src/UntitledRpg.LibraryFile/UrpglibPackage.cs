@@ -24,13 +24,13 @@ public sealed class UrpglibPackage : IDisposable, IAsyncDisposable
 		UrpglibHeader header,
 		PackageManifest? manifest,
 		Stream payloadStream,
-		long payloadStartPosition = 0,
+		long? payloadStartPosition = null,
 		bool ownsStream = true)
 	{
 		this.Header = header;
 		this.Manifest = manifest;
 		this.payloadStream = payloadStream;
-		this.payloadStartPosition = payloadStartPosition;
+		this.payloadStartPosition = payloadStartPosition ?? (payloadStream.CanSeek ? payloadStream.Position : 0);
 		this.ownsStream = ownsStream;
 	}
 
@@ -87,14 +87,16 @@ public sealed class UrpglibPackage : IDisposable, IAsyncDisposable
 	{
 		ObjectDisposedException.ThrowIf(this.disposed, this);
 
-		using var tarReader = this.OpenPayload();
-
-		while (await tarReader.GetNextEntryAsync(cancellationToken: ct).ConfigureAwait(false) is { } entry)
+		var tarReader = this.OpenPayload();
+		await using (tarReader.ConfigureAwait(false))
 		{
-			if (entry.EntryType is TarEntryType.RegularFile or TarEntryType.V7RegularFile &&
-				entry.DataStream is not null)
+			while (await tarReader.GetNextEntryAsync(cancellationToken: ct).ConfigureAwait(false) is { } entry)
 			{
-				yield return new UrpglibPackageEntry(entry.Name, entry.Length, entry.DataStream);
+				if (entry.EntryType is TarEntryType.RegularFile or TarEntryType.V7RegularFile &&
+					entry.DataStream is not null)
+				{
+					yield return new UrpglibPackageEntry(entry.Name, entry.Length, entry.DataStream);
+				}
 			}
 		}
 	}

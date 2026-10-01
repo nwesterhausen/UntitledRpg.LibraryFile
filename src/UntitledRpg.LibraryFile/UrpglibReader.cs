@@ -19,7 +19,7 @@ public static class UrpglibReader
 	///     If true, the entire payload is read into a MemoryStream. If false, the underlying
 	///     FileStream is used, which is more memory-efficient for large files.
 	/// </param>
-	/// <returns>A UrpgPackage object for accessing the file's contents.</returns>
+	/// <returns>A UrpglibPackage object for accessing the file's contents.</returns>
 	public static async Task<UrpglibPackage> ReadAsync(string filePath, bool readPayloadIntoMemory = false)
 	{
 		ArgumentNullException.ThrowIfNull(filePath);
