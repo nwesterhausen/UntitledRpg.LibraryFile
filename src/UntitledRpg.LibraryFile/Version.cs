@@ -5,7 +5,7 @@ namespace UntitledRpg.LibraryFile;
 /// <summary>
 ///     Describes the version of a package. Uses semantic versioning.
 /// </summary>
-public sealed record Version : IComparable, IComparable<Version>
+public sealed record Version : IComparable, IComparable<Version?>
 {
 	/// <summary>
 	///     Create a version from a version string
@@ -113,7 +113,13 @@ public sealed record Version : IComparable, IComparable<Version>
 		this.PatchVersion = parts.Length > 2 && int.TryParse(parts[2], out var patch) ? patch : 0;
 	}
 
-	public static int Compare(Version left, Version right)
+	/// <summary>
+	///		Compare one version to another.
+	/// </summary>
+	/// <param name="left"></param>
+	/// <param name="right"></param>
+	/// <returns></returns>
+	public static int Compare(Version? left, Version? right)
 	{
 		if (ReferenceEquals(left, right))
 		{
@@ -127,4 +133,7 @@ public sealed record Version : IComparable, IComparable<Version>
 
 		return left.CompareTo(right);
 	}
+
+	/// <inheritdoc />
+	public override string ToString() => $"{this.MajorVersion}.{this.MinorVersion}.{this.PatchVersion}";
 }
