@@ -206,7 +206,7 @@ public class UrpglibFileTests
 		await UrpglibWriter.WriteAsync(filePath, manifest, files).ConfigureAwait(false);
 
 		// Act
-		var result = await UrpglibFile.ValidateAsync(filePath, true).ConfigureAwait(false);
+		var result = await UrpglibFile.ValidateAsync(filePath).ConfigureAwait(false);
 
 		// Assert
 		Assert.IsTrue(result.IsValid);
@@ -267,7 +267,7 @@ public class UrpglibFileTests
 		}
 
 		// Act
-		var result = await UrpglibFile.ValidateAsync(filePath, true).ConfigureAwait(false);
+		var result = await UrpglibFile.ValidateAsync(filePath).ConfigureAwait(false);
 
 		// Assert
 		Assert.IsFalse(result.IsValid);

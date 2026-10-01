@@ -1,10 +1,12 @@
 using System;
+using System.Text.Json.Serialization;
 
 namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Describes the version of a package. Uses semantic versioning.
 /// </summary>
+[JsonConverter(typeof(VersionJsonConverter))]
 public sealed record Version : IComparable, IComparable<Version?>
 {
 	/// <summary>
@@ -114,7 +116,7 @@ public sealed record Version : IComparable, IComparable<Version?>
 	}
 
 	/// <summary>
-	///		Compare one version to another.
+	///     Compare one version to another.
 	/// </summary>
 	/// <param name="left"></param>
 	/// <param name="right"></param>
