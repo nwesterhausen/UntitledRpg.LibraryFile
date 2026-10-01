@@ -4,7 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Reads .urpglib files, providing access to the header, manifest, and payload stream.

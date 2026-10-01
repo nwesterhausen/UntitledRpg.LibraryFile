@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 #pragma warning disable CA1303
 /// <summary>
 ///     Represents an exception that is thrown when a file does not conform to the expected URPG file format.

@@ -1,4 +1,4 @@
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Defines the supported payload compression algorithms.

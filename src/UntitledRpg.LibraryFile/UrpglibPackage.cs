@@ -3,7 +3,7 @@ using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
 
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Represents the complete, deserialized .urpglib package,

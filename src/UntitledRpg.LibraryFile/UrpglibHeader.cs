@@ -1,4 +1,4 @@
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Contains the structured, binary data from the file header.

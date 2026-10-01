@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace UntitledRpgLogic.LibraryFile;
+namespace UntitledRpg.LibraryFile;
 
 /// <summary>
 ///     Constants used throughout the URPG library file format library.
@@ -15,7 +15,7 @@ public static class UrpglibConstants
 	/// <summary>
 	///     The current version of the manifest structure this library can write.
 	/// </summary>
-	public const ushort CurrentManifestSchemaVersion = 2;
+	public const ushort CurrentManifestSchemaVersion = 3;
 
 	/// <summary>
 	///     The current version of the payload data structure this library can write.

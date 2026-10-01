@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
+using UntitledRpg.LibraryFile;
+using Version = UntitledRpg.LibraryFile.Version;
 
 namespace UntitledRpgLogic.LibraryFile.Tests;
 
@@ -69,8 +71,8 @@ public sealed class UrpglibReaderTests : IDisposable
 
 				for (var i = 0; i < manifest.Dependencies.Count; i++)
 				{
-					Assert.AreEqual(manifest.Dependencies[i].Key, package.Manifest.Dependencies[i].Key);
-					Assert.AreEqual(manifest.Dependencies[i].Value, package.Manifest.Dependencies[i].Value);
+					Assert.AreEqual(manifest.Dependencies[i].PackageId, package.Manifest.Dependencies[i].PackageId);
+					Assert.AreEqual(manifest.Dependencies[i].Version, package.Manifest.Dependencies[i].Version);
 				}
 			}
 		}
@@ -191,7 +193,10 @@ public sealed class UrpglibReaderTests : IDisposable
 		// Arrange
 		var filePath = Path.Combine(this.tempDirectory, "large_manifest.urpglib");
 		var manifest = CreateTestManifest();
-		manifest.Description = new string('A', 10000); // Large description
+		manifest = manifest with
+		{
+			Description = new string('A', 10000) // Large description
+		};
 		await CreateValidUrpglibFile(filePath, manifest).ConfigureAwait(false);
 
 		// Act
@@ -299,11 +304,11 @@ public sealed class UrpglibReaderTests : IDisposable
 		Name = "Test Package",
 		AuthorName = "Test Author",
 		Description = "A test package for unit testing",
-		Version = "1.2.3",
+		Version = new Version("1.2.3"),
 		Dependencies =
 		[
-			new KeyValuePair<Ulid, int>(Ulid.NewUlid(), 1),
-			new KeyValuePair<Ulid, int>(Ulid.NewUlid(), 2)
+			new PackageLink(Ulid.NewUlid(), "1"),
+			new PackageLink(Ulid.NewUlid(), "2")
 		]
 	};
 
