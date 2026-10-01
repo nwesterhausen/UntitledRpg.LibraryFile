@@ -1,10 +1,8 @@
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using UntitledRpg.LibraryFile;
-using Version = UntitledRpg.LibraryFile.Version;
 
-namespace UntitledRpgLogic.LibraryFile.Tests;
+namespace UntitledRpg.LibraryFile.Tests;
 
 [TestClass]
 public sealed class UrpglibReaderTests : IDisposable

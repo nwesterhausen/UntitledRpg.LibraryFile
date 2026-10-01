@@ -92,11 +92,15 @@ public sealed record Version : IComparable, IComparable<Version>
 
 		var cmp = other.MajorVersion - this.MajorVersion;
 		if (cmp != 0)
-		{ return cmp; }
+		{
+			return cmp;
+		}
 
 		cmp = other.MinorVersion - this.MinorVersion;
 		if (cmp != 0)
-		{ return cmp; }
+		{
+			return cmp;
+		}
 
 		return other.PatchVersion - this.PatchVersion;
 	}

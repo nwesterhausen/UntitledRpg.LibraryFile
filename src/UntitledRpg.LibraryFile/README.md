@@ -159,3 +159,39 @@ the JSON itself:
 | `majorVersion` | `number`  | The major version number, parsed from the `version` string. |
 | `minorVersion` | `number`  | The minor version number, parsed from the `version` string. |
 | `patchVersion` | `number`  | The patch version number, parsed from the `version` string. |
+
+## Example
+
+Streaming to Database vs Validation vs Building
+
+```csharp
+// 1. Validate package before ingest
+var check = await UrpgFile.ValidateAsync("Items.urpglib");
+if (!check.IsValid)
+{
+    Console.WriteLine($"Corrupt package: {string.Join(", ", check.Errors)}");
+    return;
+}
+
+// 2. Stream all payload files straight into definitions / DB
+await using var package = await UrpgFile.OpenReadAsync("Items.urpglib");
+await foreach (var entry in package.ReadEntriesAsync())
+{
+    if (entry.Name.EndsWith(".toml", StringComparison.OrdinalIgnoreCase))
+    {
+        string tomlText = await entry.ReadAsStringAsync();
+        // Parse TOML and write directly to SQLite / PostgreSQL
+    }
+}
+
+// 3. Unpack everything back to disk
+await UrpgFile.ExtractToDirectoryAsync("Items.urpglib", "./unpacked_mod");
+
+// 4. Pack a directory into a new archive
+await UrpgFile.CreateFromDirectoryAsync("./unpacked_mod", "Items_v2.urpglib", new PackageManifest
+{
+    Name = "Core Items",
+    AuthorName = "Dev",
+    Version = new Version(1, 0, 0)
+});
+```

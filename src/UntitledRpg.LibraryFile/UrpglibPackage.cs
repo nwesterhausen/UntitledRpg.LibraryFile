@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Formats.Tar;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace UntitledRpg.LibraryFile;
 
@@ -9,16 +13,25 @@ namespace UntitledRpg.LibraryFile;
 ///     Represents the complete, deserialized .urpglib package,
 ///     providing access to its manifest and a stream for its payload data.
 /// </summary>
-public sealed class UrpglibPackage : IDisposable
+public sealed class UrpglibPackage : IDisposable, IAsyncDisposable
 {
+	private readonly bool ownsStream;
+	private readonly long payloadStartPosition;
 	private readonly Stream payloadStream;
 	private bool disposed;
 
-	internal UrpglibPackage(UrpglibHeader header, PackageManifest? manifest, Stream payloadStream)
+	internal UrpglibPackage(
+		UrpglibHeader header,
+		PackageManifest? manifest,
+		Stream payloadStream,
+		long payloadStartPosition = 0,
+		bool ownsStream = true)
 	{
 		this.Header = header;
 		this.Manifest = manifest;
 		this.payloadStream = payloadStream;
+		this.payloadStartPosition = payloadStartPosition;
+		this.ownsStream = ownsStream;
 	}
 
 	/// <summary>
@@ -32,6 +45,22 @@ public sealed class UrpglibPackage : IDisposable
 	public PackageManifest? Manifest { get; }
 
 	/// <inheritdoc />
+	public async ValueTask DisposeAsync()
+	{
+		if (this.disposed)
+		{
+			return;
+		}
+
+		if (this.ownsStream)
+		{
+			await this.payloadStream.DisposeAsync().ConfigureAwait(false);
+		}
+
+		this.disposed = true;
+	}
+
+	/// <inheritdoc />
 	public void Dispose()
 	{
 		if (this.disposed)
@@ -39,8 +68,116 @@ public sealed class UrpglibPackage : IDisposable
 			return;
 		}
 
-		this.payloadStream.Dispose();
+		if (this.ownsStream)
+		{
+			this.payloadStream.Dispose();
+		}
+
 		this.disposed = true;
+	}
+
+	/// <summary>
+	///     Asynchronously iterates over each regular file entry inside the payload without buffering to disk.
+	/// </summary>
+	/// <remarks>
+	///     Read each entry's data before advancing to the next iteration in the enumeration.
+	/// </remarks>
+	public async IAsyncEnumerable<UrpglibPackageEntry> ReadEntriesAsync(
+		[EnumeratorCancellation] CancellationToken ct = default)
+	{
+		ObjectDisposedException.ThrowIf(this.disposed, this);
+
+		using var tarReader = this.OpenPayload();
+
+		while (await tarReader.GetNextEntryAsync(cancellationToken: ct).ConfigureAwait(false) is { } entry)
+		{
+			if (entry.EntryType is TarEntryType.RegularFile or TarEntryType.V7RegularFile &&
+				entry.DataStream is not null)
+			{
+				yield return new UrpglibPackageEntry(entry.Name, entry.Length, entry.DataStream);
+			}
+		}
+	}
+
+	/// <summary>
+	///     Extracts all payload contents into the specified directory on disk.
+	/// </summary>
+	/// <param name="destinationDirectory">Directory path where files will be written.</param>
+	/// <param name="overwrite">Whether to overwrite existing files.</param>
+	/// <param name="ct">Cancellation token.</param>
+	public async Task ExtractToDirectoryAsync(
+		string destinationDirectory,
+		bool overwrite = false,
+		CancellationToken ct = default)
+	{
+		ObjectDisposedException.ThrowIf(this.disposed, this);
+
+		var fullDestDir = Path.GetFullPath(destinationDirectory);
+		if (!fullDestDir.EndsWith(Path.DirectorySeparatorChar))
+		{
+			fullDestDir += Path.DirectorySeparatorChar;
+		}
+
+		Directory.CreateDirectory(fullDestDir);
+
+		var tarReader = this.OpenPayload();
+		await using (tarReader.ConfigureAwait(false))
+		{
+			while (await tarReader.GetNextEntryAsync(cancellationToken: ct).ConfigureAwait(false) is { } entry)
+			{
+				var targetPath = Path.GetFullPath(Path.Combine(fullDestDir, entry.Name));
+
+				// Zip/Tar Slip directory traversal defense
+				if (!targetPath.StartsWith(fullDestDir, StringComparison.OrdinalIgnoreCase))
+				{
+					UrpglibFileFormatException.Throw($"Entry '{entry.Name}' resolves outside the target destination.");
+				}
+
+				if (entry.EntryType is TarEntryType.Directory)
+				{
+					Directory.CreateDirectory(targetPath);
+					continue;
+				}
+
+				if (entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile) ||
+					entry.DataStream is null)
+				{
+					continue;
+				}
+
+				var dirName = Path.GetDirectoryName(targetPath);
+				if (!string.IsNullOrEmpty(dirName))
+				{
+					Directory.CreateDirectory(dirName);
+				}
+
+				var mode = overwrite ? FileMode.Create : FileMode.CreateNew;
+				var destFileStream = new FileStream(targetPath, mode, FileAccess.Write, FileShare.None);
+				await using (destFileStream.ConfigureAwait(false))
+				{
+					await entry.DataStream.CopyToAsync(destFileStream, ct)
+						.ConfigureAwait(false);
+					;
+				}
+			}
+		}
+	}
+
+	/// <summary>
+	///     Loads all package files into an in-memory dictionary.
+	///     Use this when random-access queries on specific files are required.
+	/// </summary>
+	public async Task<IReadOnlyDictionary<string, byte[]>> ReadAllToMemoryAsync(CancellationToken ct = default)
+	{
+		ObjectDisposedException.ThrowIf(this.disposed, this);
+
+		var dict = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+		await foreach (var entry in this.ReadEntriesAsync(ct).ConfigureAwait(false))
+		{
+			dict[entry.Name] = await entry.ReadAsBytesAsync(ct).ConfigureAwait(false);
+		}
+
+		return dict;
 	}
 
 	/// <summary>
@@ -48,15 +185,13 @@ public sealed class UrpglibPackage : IDisposable
 	///     The caller is responsible for disposing the TarReader.
 	/// </summary>
 	/// <returns>A new TarReader instance for the payload.</returns>
-	/// <exception cref="InvalidOperationException">Thrown if the package is disposed.</exception>
 	public TarReader OpenPayload()
 	{
 		ObjectDisposedException.ThrowIf(this.disposed, this);
 
-		// Only reset if this is an in-memory buffer dedicated to the payload
-		if (this.payloadStream is MemoryStream)
+		if (this.payloadStream.CanSeek)
 		{
-			this.payloadStream.Position = 0;
+			this.payloadStream.Position = this.payloadStartPosition;
 		}
 
 		var decompressionStream = this.Header.PayloadCompression switch
@@ -70,76 +205,3 @@ public sealed class UrpglibPackage : IDisposable
 		return new TarReader(decompressionStream);
 	}
 }
-
-#region --- Usage Example ---
-
-/*
-public static class Example
-{
-    public static async Task Main(string[] args)
-    {
-        Console.WriteLine("--- Creating .urpglib package ---");
-
-        // 1. Define the manifest for our new package
-        var myManifest = new PackageManifest
-        {
-            Id = Guid.NewGuid(),
-            Name = "Core Gameplay Data",
-            Description = "Contains all essential items and monster definitions for the game.",
-            Version = "1.0.1",
-            VersionNumber = 101,
-            AuthorName = "Nightwave Studios",
-            AuthorId = Guid.NewGuid(),
-            Dependencies = new[] { new Guid("A3E6D8B1-3E4C-4B1F-8A0A-1B2C3D4E5F6A") } // Example dependency
-        };
-
-        // 2. Define the files to be included in the payload
-        var filesToPackage = new Dictionary<string, byte[]>
-        {
-            { "items/swords/longsword.toml", Encoding.UTF8.GetBytes("name = \"Longsword\"\ndamage = 10") },
-            { "items/potions/health.toml", Encoding.UTF8.GetBytes("name = \"Health Potion\"\nrestores = 50") },
-            { "monsters/goblin.toml", Encoding.UTF8.GetBytes("name = \"Goblin\"\nhealth = 30\nloot_table = \"common\"") }
-        };
-
-        string packagePath = "CoreData.urpglib";
-        await UrpgWriter.WriteAsync(packagePath, myManifest, filesToPackage);
-        Console.WriteLine($"Successfully created '{packagePath}'");
-
-        Console.WriteLine("\n--- Reading .urpglib package ---");
-
-        // 3. Read the package back
-        try
-        {
-            await using var package = await UrpgReader.ReadAsync(packagePath);
-
-            Console.WriteLine($"Package Name: {package.Manifest.Name}");
-            Console.WriteLine($"Author: {package.Manifest.AuthorName}");
-            Console.WriteLine($"Version: {package.Manifest.Version}");
-            Console.WriteLine($"Payload Compression: {package.Header.PayloadCompression}");
-            Console.WriteLine($"Dependencies: {string.Join(", ", package.Manifest.Dependencies)}");
-
-            // 4. Iterate through the files in the payload
-            Console.WriteLine("\nFiles in payload:");
-            using var tarReader = package.OpenPayload();
-            while (await tarReader.GetNextEntryAsync() is { } entry)
-            {
-                if (entry.DataStream != null)
-                {
-                    using var reader = new StreamReader(entry.DataStream, Encoding.UTF8);
-                    string content = await reader.ReadToEndAsync();
-                    Console.WriteLine($" - {entry.Name} (Size: {entry.Length} bytes)");
-                    Console.WriteLine($"   Content: {content.Replace("\n", ", ")}");
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine($"An error occurred: {ex.Message}");
-            Console.ResetColor();
-        }
-    }
-}
-*/
-
-#endregion
